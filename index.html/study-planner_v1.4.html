@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudyFocus — AI学習スケジューラー</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=Noto+Sans+JP:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0c14;
+  --bg2:#111420;
+  --bg3:#171b2b;
+  --bg4:#1e2338;
+  --bg5:#252b42;
+  --accent:#7c6fff;
+  --accent2:#a99fff;
+  --accent3:#3ecf8e;
+  --warn:#f0a04b;
+  --danger:#e05c5c;
+  --text:#eaecf7;
+  --text2:#8b92b8;
+  --text3:#4f5675;
+  --border:#232840;
+  --border2:#2e3555;
+  --r:10px;--r2:14px;--r3:18px;
+  --shadow:0 4px 24px rgba(0,0,0,.5);
+  --font-display:'Syne',sans-serif;
+  --font-body:'Noto Sans JP',sans-serif;
+  --font-mono:'DM Mono',monospace;
+}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:14px;line-height:1.6}
+
+.app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+
+/* Sidebar */
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sidebar-inner{padding:20px 14px;display:flex;flex-direction:column;gap:4px;flex:1}
+.logo{font-family:var(--font-display);font-size:17px;font-weight:800;color:var(--accent2);padding:8px 10px 20px;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
+.logo i{font-size:22px;color:var(--accent)}
+.logo-sub{font-size:10px;font-weight:400;color:var(--text3);letter-spacing:.1em;display:block}
+.nav-section{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);padding:14px 10px 4px;font-family:var(--font-mono)}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r);cursor:pointer;color:var(--text2);font-size:13px;transition:all .15s;user-select:none;border:1px solid transparent}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:var(--bg4);color:var(--accent2);border-color:var(--border)}
+.nav-item i{font-size:17px;width:20px;text-align:center;flex-shrink:0}
+.nav-badge{margin-left:auto;font-size:10px;padding:2px 8px;border-radius:10px;background:var(--bg5);color:var(--text3);font-family:var(--font-mono)}
+.subject-chip{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:var(--r);cursor:pointer;font-size:12px;color:var(--text2);transition:all .12s}
+.subject-chip:hover{background:var(--bg3)}
+.subject-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sidebar-bottom{padding:14px;border-top:1px solid var(--border);margin-top:auto}
+.exam-countdown{background:linear-gradient(135deg,rgba(124,111,255,.15),rgba(62,207,142,.08));border:1px solid rgba(124,111,255,.3);border-radius:var(--r2);padding:12px 14px}
+.exam-countdown .days{font-family:var(--font-mono);font-size:28px;font-weight:500;color:var(--accent2);line-height:1}
+.exam-countdown .label{font-size:10px;color:var(--text3);margin-top:3px}
+.exam-countdown .name{font-size:12px;font-weight:500;color:var(--text);margin-top:6px}
+
+/* Main */
+.main{display:flex;flex-direction:column}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 26px;border-bottom:1px solid var(--border);background:var(--bg2);position:sticky;top:0;z-index:100}
+.topbar-title{font-family:var(--font-display);font-size:15px;font-weight:700;letter-spacing:-.01em}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.streak-badge{display:flex;align-items:center;gap:6px;font-size:12px;padding:5px 12px;border-radius:20px;background:rgba(240,160,75,.12);border:1px solid rgba(240,160,75,.3);color:var(--warn);font-family:var(--font-mono)}
+.date-badge{font-size:12px;color:var(--text3);font-family:var(--font-mono)}
+
+/* Page */
+.page{display:none;flex-direction:column;gap:20px;padding:22px 26px;flex:1}
+.page.active{display:flex}
+
+/* Cards */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:18px 20px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-title{font-family:var(--font-display);font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:7px}
+.card-title i{font-size:16px;color:var(--accent2)}
+.card-action{font-size:11px;color:var(--accent2);cursor:pointer;padding:4px 10px;border-radius:6px;border:1px solid var(--border2);background:transparent;font-family:var(--font-mono);transition:all .12s}
+.card-action:hover{background:var(--bg4)}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:14px 16px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;inset:0;opacity:.04;background:linear-gradient(135deg,var(--c,#7c6fff),transparent)}
+.stat-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);font-family:var(--font-mono);margin-bottom:6px}
+.stat-value{font-size:24px;font-weight:600;font-family:var(--font-mono);color:var(--text);line-height:1}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:4px}
+.stat-card.accent{--c:#7c6fff}.stat-card.accent .stat-value{color:var(--accent2)}
+.stat-card.green{--c:#3ecf8e}.stat-card.green .stat-value{color:var(--accent3)}
+.stat-card.warn{--c:#f0a04b}.stat-card.warn .stat-value{color:var(--warn)}
+.stat-card.danger{--c:#e05c5c}.stat-card.danger .stat-value{color:var(--danger)}
+.grid-3{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+
+/* Progress */
+.prog-item{margin-bottom:12px}
+.prog-item:last-child{margin-bottom:0}
+.prog-header{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px}
+.prog-name{color:var(--text);font-weight:500}
+.prog-val{color:var(--text3);font-family:var(--font-mono)}
+.prog-track{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.prog-bar{height:100%;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+
+/* Week chart */
+.week-chart{display:flex;align-items:flex-end;gap:8px;height:80px}
+.wc-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px}
+.wc-wrap{flex:1;width:100%;display:flex;align-items:flex-end}
+.wc-bar{width:100%;border-radius:4px 4px 0 0;min-height:3px;transition:height .4s}
+.wc-day{font-size:10px;color:var(--text3);font-family:var(--font-mono)}
+.wc-val{font-size:9px;color:var(--text2);font-family:var(--font-mono)}
+
+/* Timer */
+.timer-wrap{text-align:center;padding:4px 0}
+.timer-modes{display:flex;gap:6px;justify-content:center;margin-bottom:14px}
+.mode-btn{font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--text3);cursor:pointer;font-family:var(--font-mono);transition:all .12s}
+.mode-btn:hover{color:var(--text2)}
+.mode-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.timer-ring{position:relative;width:120px;height:120px;margin:0 auto 12px}
+.timer-ring svg{transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:var(--bg4);stroke-width:7}
+.ring-prog{fill:none;stroke:var(--accent);stroke-width:7;stroke-linecap:round;stroke-dasharray:340;stroke-dashoffset:0;transition:stroke-dashoffset .5s linear}
+.timer-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:24px;font-weight:500;color:var(--text);letter-spacing:2px}
+.timer-status{font-size:11px;color:var(--text3);font-family:var(--font-mono);margin-bottom:10px}
+.timer-btns{display:flex;gap:8px;justify-content:center}
+.tbtn{border:1px solid var(--border2);background:var(--bg4);color:var(--text);border-radius:var(--r);padding:7px 18px;font-size:12px;cursor:pointer;transition:all .12s;font-family:var(--font-mono)}
+.tbtn:hover{background:var(--bg3)}
+.tbtn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* Streak */
+.streak-grid{display:flex;flex-wrap:wrap;gap:4px}
+.s-dot{width:20px;height:20px;border-radius:4px;background:var(--bg4)}
+.s-dot.done{background:var(--accent)}
+.s-dot.today{background:var(--accent3)}
+
+/* ════════════════════════════════════════════
+   MINDMAP (階層型ロードマップ)
+   ════════════════════════════════════════════ */
+#page-roadmap{padding:0;gap:0;overflow:hidden}
+.mindmap-toolbar{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;z-index:50}
+.mindmap-toolbar-left{display:flex;align-items:center;gap:10px}
+.mm-btn{font-size:12px;padding:5px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--bg4);color:var(--text2);cursor:pointer;font-family:var(--font-mono);transition:all .12s;display:flex;align-items:center;gap:6px}
+.mm-btn:hover{background:var(--bg3);color:var(--text)}
+.mm-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.mindmap-canvas{flex:1;overflow:auto;position:relative;background:var(--bg);cursor:grab}
+.mindmap-canvas:active{cursor:grabbing}
+.mindmap-svg-wrap{position:relative;min-width:3000px;min-height:2000px;padding:100px}
+.mindmap-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+/* Node styles */
+.mm-node{position:absolute;user-select:none;transition:all .3s cubic-bezier(0.4, 0, 0.2, 1);z-index:10}
+.mm-center{
+  background:linear-gradient(135deg,var(--accent),#5a4de8);
+  border-radius:12px;padding:14px 24px;text-align:center;
+  box-shadow:0 0 30px rgba(124,111,255,.3);
+  cursor:default;min-width:140px;transform:translateY(-50%)
+}
+.mm-center-title{font-family:var(--font-display);font-size:15px;font-weight:800;color:#fff;letter-spacing:-.01em}
+.mm-center-sub{font-size:10px;color:rgba(255,255,255,.6);font-family:var(--font-mono);margin-top:2px}
+
+.mm-subject{
+  border-radius:10px;padding:10px 16px;cursor:pointer;
+  border:2px solid;min-width:130px;text-align:left;
+  transition:all .2s;position:relative;background:var(--bg2);
+  transform:translateY(-50%)
+}
+.mm-subject:hover{transform:translateY(-50%) scale(1.04)}
+.mm-subject.expanded{box-shadow:0 0 15px rgba(124,111,255,.2)}
+.mm-subject-name{font-family:var(--font-display);font-size:13px;font-weight:700}
+.mm-subject-stats{font-size:10px;font-family:var(--font-mono);opacity:.7;margin-top:2px}
+
+.mm-unit{
+  border-radius:8px;padding:8px 14px;cursor:pointer;
+  border:1px solid;min-width:150px;max-width:220px;
+  transition:all .2s;background:var(--bg3);position:relative;
+  text-align:left;transform:translateY(-50%)
+}
+.mm-unit:hover{transform:translateY(-50%) scale(1.03)}
+.mm-unit.has-memo .mm-unit-name::after{content:'📝';font-size:10px;margin-left:4px}
+.mm-unit-name{font-size:12px;font-weight:500;color:var(--text);line-height:1.3}
+.mm-unit-tag{font-size:10px;font-family:var(--font-mono);margin-top:3px;opacity:.6}
+
+/* Edit panel */
+.mm-edit-panel{
+  position:fixed;right:20px;bottom:20px;
+  background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);
+  padding:18px 20px;width:300px;z-index:200;box-shadow:var(--shadow);
+  display:none
+}
+.mm-edit-panel.visible{display:block;animation:slideUp .2s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.mm-edit-title{font-family:var(--font-display);font-size:13px;font-weight:700;margin-bottom:12px;color:var(--accent2)}
+.mm-edit-row{margin-bottom:10px}
+.mm-edit-label{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);font-family:var(--font-mono);margin-bottom:4px;display:block}
+.mm-edit-input{background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:7px 10px;font-size:12px;width:100%;outline:none;font-family:var(--font-body)}
+.mm-edit-input:focus{border-color:var(--accent)}
+.mm-edit-btns{display:flex;gap:8px;margin-top:12px}
+.mm-edit-btn{flex:1;padding:7px;border-radius:8px;font-size:12px;cursor:pointer;font-family:var(--font-mono);border:1px solid;transition:all .12s}
+.mm-edit-btn.save{background:var(--accent);border-color:var(--accent);color:#fff}
+.mm-edit-btn.del{background:transparent;border-color:var(--danger);color:var(--danger)}
+.mm-edit-btn.cancel{background:transparent;border-color:var(--border2);color:var(--text3)}
+
+/* Import panel */
+.mm-import-panel{
+  position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+  background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);
+  padding:24px;width:500px;z-index:300;box-shadow:0 10px 40px rgba(0,0,0,.8);
+  display:none
+}
+.mm-import-panel.visible{display:block}
+.mm-import-title{font-family:var(--font-display);font-size:16px;font-weight:700;margin-bottom:12px;color:var(--accent2)}
+.mm-import-desc{font-size:12px;color:var(--text3);margin-bottom:16px;line-height:1.5}
+.mm-import-area{background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:12px;font-size:12px;width:100%;height:200px;outline:none;font-family:var(--font-mono);resize:none;margin-bottom:16px}
+.mm-import-area:focus{border-color:var(--accent)}
+
+/* Add node inputs */
+.mm-add-row{display:flex;gap:6px;align-items:center;margin-top:8px}
+.mm-add-row input{flex:1;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:6px 10px;font-size:12px;outline:none;font-family:var(--font-body)}
+.mm-add-row input:focus{border-color:var(--accent)}
+.mm-add-btn{background:var(--accent);border:none;color:#fff;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:var(--font-mono);white-space:nowrap}
+
+/* ════════════════════════════════════════════
+   月次スケジュール
+   ════════════════════════════════════════════ */
+.month-nav{display:flex;align-items:center;gap:12px}
+.month-nav-btn{background:var(--bg4);border:1px solid var(--border2);color:var(--text2);border-radius:8px;padding:5px 12px;font-size:13px;cursor:pointer;transition:all .12s;font-family:var(--font-mono)}
+.month-nav-btn:hover{background:var(--bg3);color:var(--text)}
+.month-title{font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--text);min-width:120px;text-align:center}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border)}
+.cal-header{background:var(--bg3);text-align:center;padding:8px 4px;font-size:11px;font-family:var(--font-mono);color:var(--text3)}
+.cal-header.sun{color:#e05c5c}.cal-header.sat{color:#7c6fff}
+.cal-cell{background:var(--bg2);min-height:100px;padding:6px;position:relative;transition:background .12s;vertical-align:top}
+.cal-cell:hover{background:var(--bg3)}
+.cal-cell.other-month{opacity:.35}
+.cal-cell.today .cal-date{background:var(--accent);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center}
+.cal-cell.rest-day{background:repeating-linear-gradient(45deg,var(--bg2),var(--bg2) 4px,var(--bg3) 4px,var(--bg3) 8px)}
+.cal-date{font-family:var(--font-mono);font-size:12px;color:var(--text3);margin-bottom:4px;width:22px;height:22px;display:flex;align-items:center;justify-content:center}
+.cal-date.sun-num{color:#e05c5c}.cal-date.sat-num{color:#7c6fff}
+.cal-event{font-size:11px;padding:3px 6px;border-radius:4px;margin-bottom:2px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal-rest-label{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:4px;font-family:var(--font-mono)}
+.regen-notice{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);background:rgba(124,111,255,.08);border:1px solid rgba(124,111,255,.2);border-radius:var(--r);padding:10px 12px;margin-bottom:12px}
+.month-stat{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 12px;background:var(--bg3);border-radius:var(--r);flex:1}
+.month-stat-val{font-family:var(--font-mono);font-size:18px;font-weight:600;color:var(--accent2)}
+.month-stat-label{font-size:10px;color:var(--text3);font-family:var(--font-mono)}
+.month-stats{display:flex;gap:8px;margin-bottom:12px}
+
+/* Forms */
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:12px;font-weight:500;color:var(--text);margin-bottom:6px;font-family:var(--font-mono)}
+input[type=text],input[type=date],select,textarea{background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:var(--r);padding:8px 10px;font-size:12px;width:100%;outline:none;font-family:var(--font-body)}
+input[type=text]:focus,input[type=date]:focus,select:focus,textarea:focus{border-color:var(--accent)}
+.chip-row{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-block;padding:6px 12px;border-radius:20px;background:var(--bg4);color:var(--text2);cursor:pointer;font-size:12px;border:1px solid transparent;transition:all .12s}
+.chip:hover{background:var(--bg3)}
+.chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn{border:1px solid var(--border2);background:var(--bg4);color:var(--text);border-radius:var(--r);padding:8px 14px;font-size:12px;cursor:pointer;transition:all .12s;font-family:var(--font-mono)}
+.btn:hover{background:var(--bg3)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500;width:100%;padding:12px}
+.btn.primary:hover{opacity:.9}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.small{padding:5px 12px;font-size:12px}
+.subj-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.subj-row input[type=text]{flex:1}
+.subj-row .range-wrap{display:flex;align-items:center;gap:6px}
+input[type=range]{width:80px;accent-color:var(--accent)}
+.thinking{display:flex;align-items:center;gap:10px;color:var(--text2);font-size:13px;padding:24px 0;justify-content:center}
+.dot-ani{display:flex;gap:4px}
+.dot-ani span{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:blink 1.2s infinite}
+.dot-ani span:nth-child(2){animation-delay:.2s}
+.dot-ani span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+.err-box{background:rgba(224,92,92,.1);border:1px solid rgba(224,92,92,.3);border-radius:var(--r);padding:10px 14px;color:#f09595;font-size:13px;margin-top:10px}
+.day-block{margin-bottom:20px}
+.day-label{font-family:var(--font-display);font-size:13px;font-weight:600;color:var(--accent2);margin-bottom:8px;display:flex;align-items:center;gap:6px;letter-spacing:.02em}
+.day-inner{background:var(--bg3);border-radius:var(--r2);padding:4px 14px}
+.rest-day{padding:16px;background:var(--bg3);border-radius:var(--r2);font-size:12px;color:var(--text3);display:flex;align-items:center;gap:8px;font-family:var(--font-mono)}
+.result-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.meta-pill{background:var(--bg4);border-radius:8px;padding:5px 12px;font-size:12px;font-family:var(--font-mono)}
+.meta-pill span{color:var(--text3);margin-right:4px}
+.summary-bar{background:linear-gradient(90deg,rgba(124,111,255,.12),rgba(62,207,142,.06));border-left:3px solid var(--accent);border-radius:0 var(--r) var(--r) 0;padding:10px 14px;margin-bottom:14px;font-size:13px;color:var(--text2)}
+.sched-slot{display:flex;align-items:flex-start;gap:14px;padding:12px 0;border-bottom:1px solid var(--border)}
+.sched-slot:last-child{border-bottom:none}
+.sched-time{font-family:var(--font-mono);font-size:12px;color:var(--text3);min-width:48px;padding-top:2px}
+.sched-bar{width:3px;border-radius:2px;min-height:40px;flex-shrink:0;margin-top:2px}
+.sched-body{flex:1}
+.sched-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px}
+.sched-desc{font-size:12px;color:var(--text2);margin-bottom:4px}
+.sched-tag{font-size:10px;padding:2px 8px;border-radius:10px;background:var(--bg4);color:var(--text3);font-family:var(--font-mono)}
+.tab-row{display:flex;gap:4px;margin-bottom:16px}
+.tab-btn{padding:6px 14px;border-radius:8px;font-size:12px;border:1px solid transparent;background:transparent;color:var(--text2);cursor:pointer;font-family:var(--font-mono);transition:all .12s}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{background:var(--bg4);color:var(--text);border-color:var(--border2)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+.empty-state{text-align:center;padding:40px;color:var(--text3);font-size:13px}
+.empty-state i{font-size:36px;display:block;margin-bottom:12px;color:var(--bg5)}
+.tips-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.tips-item:last-child{border-bottom:none}
+.tip-num{width:24px;height:24px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;font-weight:500;color:#fff;flex-shrink:0}
+.tip-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px}
+.tip-body{font-size:12px;color:var(--text2)}
+.gen-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ══ SIDEBAR ══════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-inner">
+    <div class="logo">
+      <i class="ti ti-brain"></i>
+      <div>StudyFocus<span class="logo-sub">AI学習プランナー</span></div>
+    </div>
+
+    <div class="nav-section">メニュー</div>
+    <div class="nav-item active" onclick="navTo('dashboard',this)">
+      <i class="ti ti-layout-dashboard"></i>ダッシュボード
+    </div>
+    <div class="nav-item" onclick="navTo('roadmap',this)">
+      <i class="ti ti-sitemap"></i>ロードマップ
+      <span class="nav-badge">MAP</span>
+    </div>
+    <div class="nav-item" onclick="navTo('monthly',this)">
+      <i class="ti ti-calendar-month"></i>月次スケジュール
+    </div>
+    <div class="nav-item" onclick="navTo('ai',this)">
+      <i class="ti ti-sparkles"></i>AI生成
+    </div>
+
+    <div class="nav-section">科目</div>
+    <div id="sidebar-subjects"></div>
+  </div>
+  <div class="sidebar-bottom">
+    <div class="exam-countdown">
+      <div class="days" id="countdown-num">—</div>
+      <div class="label">日後に試験</div>
+      <div class="name" id="countdown-name">試験名を設定してください</div>
+    </div>
+  </div>
+</aside>
+
+<!-- ══ MAIN ═════════════════════════════════════════ -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="page-title">ダッシュボード</div>
+    <div class="topbar-right">
+      <div class="date-badge" id="today-label"></div>
+      <div class="streak-badge"><i class="ti ti-flame"></i><span id="streak-num">7</span>日連続</div>
+    </div>
+  </div>
+
+  <!-- ① ダッシュボード ─────────────────────────── -->
+  <div class="page active" id="page-dashboard">
+    <div class="stats-grid">
+      <div class="stat-card accent"><div class="stat-label">今日の学習</div><div class="stat-value">2.5h</div><div class="stat-sub">目標 3h</div></div>
+      <div class="stat-card"><div class="stat-label">累計時間</div><div class="stat-value">62h</div><div class="stat-sub">今月</div></div>
+      <div class="stat-card green"><div class="stat-label">完了タスク</div><div class="stat-value" id="s-tasks">2/5</div><div class="stat-sub">本日</div></div>
+      <div class="stat-card warn"><div class="stat-label">試験まで</div><div class="stat-value" id="s-days">—</div><div class="stat-sub" id="s-exam-name">設定してください</div></div>
+    </div>
+    <div class="grid-3">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card">
+          <div class="card-header"><span class="card-title"><i class="ti ti-chart-bar"></i>今週の学習時間</span></div>
+          <div class="week-chart" id="week-chart"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title"><i class="ti ti-target"></i>科目別進捗</span></div>
+          <div id="subj-progress"></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card">
+          <div class="card-header"><span class="card-title"><i class="ti ti-clock"></i>ポモドーロタイマー</span></div>
+          <div class="timer-wrap">
+            <div class="timer-modes">
+              <button class="mode-btn active" onclick="setMode('focus',this)">集中</button>
+              <button class="mode-btn" onclick="setMode('short',this)">短休憩</button>
+              <button class="mode-btn" onclick="setMode('long',this)">長休憩</button>
+            </div>
+            <div class="timer-ring">
+              <svg width="120" height="120" viewBox="0 0 120 120">
+                <circle class="ring-bg" cx="60" cy="60" r="54"/>
+                <circle class="ring-prog" id="ring-prog" cx="60" cy="60" r="54"/>
+              </svg>
+              <div class="timer-num" id="timer-num">25:00</div>
+            </div>
+            <div class="timer-status" id="timer-status">集中モード</div>
+            <div class="timer-btns">
+              <button class="tbtn primary" id="timer-start" onclick="toggleTimer()">▶ スタート</button>
+              <button class="tbtn" onclick="resetTimer()"><i class="ti ti-refresh"></i></button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title"><i class="ti ti-flame"></i>学習ストリーク</span></div>
+          <div class="streak-grid" id="streak-grid"></div>
+          <div style="font-size:11px;color:var(--text3);margin-top:8px;font-family:var(--font-mono)">紫=達成 / 緑=今日 / 2週間</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ② ロードマップ（階層型マインドマップ）─────────── -->
+  <div class="page" id="page-roadmap">
+    <div class="mindmap-toolbar">
+      <div class="mindmap-toolbar-left">
+        <button class="mm-btn primary" onclick="addSubjectPrompt()"><i class="ti ti-plus"></i>科目を追加</button>
+        <button class="mm-btn" onclick="openImportPanel()"><i class="ti ti-file-import"></i>テキストから読込</button>
+        <button class="mm-btn" onclick="autoFitMindmap()"><i class="ti ti-maximize"></i>全体を表示</button>
+        <button class="mm-btn" onclick="resetMindmap()"><i class="ti ti-refresh"></i>リセット</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="mm-btn" onclick="zoomMM(-0.1)"><i class="ti ti-minus"></i></button>
+        <span id="zoom-label" style="font-size:11px;font-family:var(--font-mono);color:var(--text3);min-width:40px;text-align:center">100%</span>
+        <button class="mm-btn" onclick="zoomMM(+0.1)"><i class="ti ti-plus"></i></button>
+      </div>
+    </div>
+    <div class="mindmap-canvas" id="mindmap-canvas">
+      <div class="mindmap-svg-wrap" id="mindmap-wrap">
+        <svg class="mindmap-svg" id="mindmap-svg"></svg>
+        <div id="mindmap-nodes"></div>
+      </div>
+    </div>
+    <!-- Edit panel -->
+    <div class="mm-edit-panel" id="mm-edit-panel">
+      <div class="mm-edit-title" id="mm-edit-panel-title">単元を編集</div>
+      <div class="mm-edit-row">
+        <label class="mm-edit-label">名前</label>
+        <input class="mm-edit-input" id="mm-edit-name" type="text">
+      </div>
+      <div class="mm-edit-row">
+        <label class="mm-edit-label">メモ</label>
+        <input class="mm-edit-input" id="mm-edit-memo" type="text" placeholder="学習メモ・重要ポイント">
+      </div>
+      <div class="mm-edit-btns">
+        <button class="mm-edit-btn save" onclick="saveEditPanel()">保存</button>
+        <button class="mm-edit-btn del" onclick="deleteFromPanel()">削除</button>
+        <button class="mm-edit-btn cancel" onclick="closeEditPanel()">✕</button>
+      </div>
+      <!-- 子ノード追加 -->
+      <div id="mm-edit-addchild" style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px;display:none">
+        <div class="mm-edit-label">＋ 単元を追加</div>
+        <div class="mm-add-row">
+          <input id="mm-add-unit-name" type="text" placeholder="単元名">
+          <button class="mm-add-btn" onclick="addUnitFromPanel()">追加</button>
+        </div>
+      </div>
+    </div>
+    <!-- Import panel -->
+    <div class="mm-import-panel" id="mm-import-panel">
+      <div class="mm-import-title">テキストから一括インポート</div>
+      <div class="mm-import-desc">
+        以下の形式でテキストを入力してください：<br>
+        <strong>科目名</strong>（行頭）<br>
+        <strong>- 単元名: メモ内容</strong>（ハイフンから開始）
+      </div>
+      <textarea class="mm-import-area" id="mm-import-text" placeholder="例：&#10;民法&#10;- 総則: 詐欺・錯誤の取消&#10;- 物権変動&#10;憲法&#10;- 基本的人権"></textarea>
+      <div class="mm-edit-btns">
+        <button class="mm-edit-btn save" onclick="importFromText()">インポート実行</button>
+        <button class="mm-edit-btn cancel" onclick="closeImportPanel()">キャンセル</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ③ 月次スケジュール ───────────────────────── -->
+  <div class="page" id="page-monthly">
+    <div class="card" style="padding-bottom:10px">
+      <div class="card-header" style="margin-bottom:10px">
+        <span class="card-title"><i class="ti ti-calendar-month"></i>月次学習スケジュール</span>
+        <div class="month-nav">
+          <button class="month-nav-btn" onclick="changeMonth(-1)">‹</button>
+          <div class="month-title" id="month-title"></div>
+          <button class="month-nav-btn" onclick="changeMonth(+1)">›</button>
+        </div>
+      </div>
+      <div class="regen-notice" id="regen-notice">
+        <i class="ti ti-info-circle" style="color:var(--accent2)"></i>
+        ロードマップの単元データをもとに学習イベントを自動配置しています。
+        <button class="card-action" onclick="buildMonthlySchedule()" style="margin-left:auto">再生成</button>
+      </div>
+      <div class="month-stats" id="month-stats"></div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+  </div>
+
+  <!-- ④ AI生成 ────────────────────────────────── -->
+  <div class="page" id="page-ai">
+    <div class="gen-grid">
+      <div class="card">
+        <div class="card-header"><span class="card-title"><i class="ti ti-sparkles"></i>AIスケジュール生成</span></div>
+        <div class="form-group">
+          <label class="form-label">試験名</label>
+          <input type="text" id="f-exam" value="行政書士試験">
+        </div>
+        <div class="form-group">
+          <label class="form-label">試験日</label>
+          <input type="date" id="f-date">
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="margin-bottom:8px">科目と理解度</label>
+          <div id="f-subjects"></div>
+          <button class="btn small" id="add-subj-btn" onclick="addFormSubject()" style="margin-top:6px">
+            <i class="ti ti-plus"></i> 科目を追加
+          </button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <div>
+            <label class="form-label">1日の学習時間</label>
+            <select id="f-daily"><option value="1">1時間</option><option value="2">2時間</option><button value="3" selected>3時間</button><option value="4">4時間</option><option value="5">5時間以上</option></select>
+          </div>
+          <div>
+            <label class="form-label">学習スタイル</label>
+            <select id="f-style"><option value="balance">バランス型</option><option value="weak">弱点集中型</option><option value="past">過去問重視型</option></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">学習期間</label>
+          <select id="f-period"><option value="1">今日のみ</option><option value="7" selected>今週（7日分）</option><option value="30">今月（30日分）</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">休息日</label>
+          <div class="chip-row" id="f-rest">
+            <span class="chip" onclick="toggleChip(this)" data-day="1">月</span>
+            <span class="chip" onclick="toggleChip(this)" data-day="2">火</span>
+            <span class="chip" onclick="toggleChip(this)" data-day="3">水</span>
+            <span class="chip" onclick="toggleChip(this)" data-day="4">木</span>
+            <span class="chip" onclick="toggleChip(this)" data-day="5">金</span>
+            <span class="chip on" onclick="toggleChip(this)" data-day="6">土</span>
+            <span class="chip on" onclick="toggleChip(this)" data-day="0">日</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">特記事項（任意）</label>
+          <textarea id="f-note" rows="2" placeholder="例：朝型。民法が特に苦手。"></textarea>
+        </div>
+        <button class="btn primary" id="gen-btn" onclick="generateSchedule()">
+          <i class="ti ti-sparkles"></i> AIでスケジュールを生成する
+        </button>
+        <div id="gen-err"></div>
+      </div>
+      <div class="card">
+        <div class="tab-row">
+          <button class="tab-btn active" onclick="setTab('res',this)">生成結果</button>
+          <button class="tab-btn" onclick="setTab('adv',this)">AIアドバイス</button>
+        </div>
+        <div class="tab-panel active" id="tab-res">
+          <div class="empty-state" id="result-empty"><i class="ti ti-calendar-x"></i>まだスケジュールが生成されていません。<br>左のフォームで条件を設定してください。</div>
+          <div id="result-content" style="display:none"></div>
+        </div>
+        <div class="tab-panel" id="tab-adv">
+          <div class="empty-state" id="adv-empty"><i class="ti ti-bulb"></i>スケジュール生成後にアドバイスが表示されます。</div>
+          <div id="adv-content" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+let subjects = [
+  {id:0, name:'民法',    color:'#7c6fff', hours:22, target:40, progress:55},
+  {id:1, name:'憲法',    color:'#3ecf8e', hours:14, target:25, progress:56},
+  {id:2, name:'行政法',  color:'#f0a04b', hours:18, target:35, progress:51},
+  {id:3, name:'商法',    color:'#e05c5c', hours:8,  target:20, progress:40},
+];
+
+let mapData = [
+  {
+    subjectId:0,
+    units:[
+      {id:'u0', name:'総則・意思表示', memo:'詐欺・錯誤の取消パターン'},
+      {id:'u1', name:'物権変動',       memo:'177条の第三者の範囲'},
+      {id:'u2', name:'債権各論',       memo:'売買・請負・委任'},
+    ]
+  },
+  {
+    subjectId:1,
+    units:[
+      {id:'u3', name:'基本的人権',   memo:'違憲審査基準'},
+      {id:'u4', name:'統治機構',     memo:'衆議院の解散権'},
+    ]
+  },
+  {
+    subjectId:2,
+    units:[
+      {id:'u5', name:'行政手続法',   memo:'不利益処分の定義'},
+      {id:'u6', name:'行政不服申立', memo:'審査請求の区別'},
+    ]
+  },
+  {
+    subjectId:3,
+    units:[
+      {id:'u7', name:'会社法基礎', memo:'役員の責任'}
+    ]
+  },
+];
+
+const weekData = [1.5, 2.0, 0, 3.0, 2.5, 1.0, 0];
+const weekDays = ['月','火','水','木','金','土','日'];
+let formSubjects = [
+  {name:'民法',  level:40, color:'#7c6fff'},
+  {name:'憲法',  level:60, color:'#3ecf8e'},
+  {name:'行政法',level:50, color:'#f0a04b'},
+  {name:'商法',  level:30, color:'#e05c5c'},
+];
+const subjectColors = ['#7c6fff','#3ecf8e','#f0a04b','#e05c5c','#a99fff','#5dcaa5'];
+
+let timerSec=25*60, timerRunning=false, timerInterval=null, timerMode='focus';
+const timerModes = {focus:{label:'集中モード',sec:25*60}, short:{label:'短休憩',sec:5*60}, long:{label:'長休憩',sec:15*60}};
+
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let monthEvents = {};
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  const d = new Date(); d.setDate(d.getDate()+45);
+  const elDate = document.getElementById('f-date');
+  if(elDate) elDate.value = d.toISOString().split('T')[0];
+  const now = new Date();
+  const elToday = document.getElementById('today-label');
+  if(elToday) elToday.textContent = `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())}`;
+
+  renderSidebarSubjects();
+  renderWeekChart();
+  renderSubjProgress();
+  renderStreak();
+  renderFormSubjects();
+  updateCountdown();
+
+  const elFExam = document.getElementById('f-exam');
+  if(elFExam) elFExam.addEventListener('input', updateCountdown);
+  if(elDate) elDate.addEventListener('change', updateCountdown);
+});
+
+// ═══════════════════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════════════════
+function navTo(id, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const target = document.getElementById('page-'+id);
+  if(target) target.classList.add('active');
+  if(el) el.classList.add('active');
+  const titles={
+    dashboard:'ダッシュボード',
+    roadmap:'ロードマップ',
+    monthly:'月次学習スケジュール',
+    ai:'AIスケジュール生成'
+  };
+  const elTitle = document.getElementById('page-title');
+  if(elTitle) elTitle.textContent = titles[id]||id;
+
+  if(id==='roadmap') { setTimeout(() => { renderMindmap(); autoFitMindmap(); }, 50); }
+  if(id==='monthly') { buildMonthlySchedule(); }
+}
+
+function updateCountdown(){
+  const elFExam = document.getElementById('f-exam');
+  const elFDate = document.getElementById('f-date');
+  const name = elFExam?.value || '指定試験';
+  const val  = elFDate?.value;
+  const elCN = document.getElementById('countdown-name');
+  const elSEN = document.getElementById('s-exam-name');
+  if(elCN) elCN.textContent = name;
+  if(elSEN) elSEN.textContent = name;
+  if(val){
+    const today = new Date(); today.setHours(0,0,0,0);
+    const exam  = new Date(val); exam.setHours(0,0,0,0);
+    const diff  = Math.ceil((exam-today)/(1000*60*60*24));
+    const txt   = diff>=0 ? diff : '終了';
+    const elCNum = document.getElementById('countdown-num');
+    const elSDays = document.getElementById('s-days');
+    if(elCNum) elCNum.textContent = txt;
+    if(elSDays) elSDays.textContent = diff>=0 ? diff+'日' : '終了';
+  }
+}
+
+function pad(n){return String(n).padStart(2,'0')}
+function fmtTime(s){return pad(Math.floor(s/60))+':'+pad(s%60)}
+function updateTimer(){
+  const el = document.getElementById('timer-num');
+  if(!el) return;
+  el.textContent=fmtTime(timerSec);
+  const pct=timerSec/timerModes[timerMode].sec;
+  const elRP = document.getElementById('ring-prog');
+  if(elRP) elRP.style.strokeDashoffset=340*(1-pct);
+  const elTS = document.getElementById('timer-status');
+  if(elTS) elTS.textContent=timerModes[timerMode].label+(timerRunning?' 中..':'');
+}
+function setMode(m,btn){
+  timerMode=m; timerSec=timerModes[m].sec;
+  clearInterval(timerInterval); timerRunning=false;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active',b===btn));
+  const elTS = document.getElementById('timer-start');
+  if(elTS) elTS.textContent='▶ スタート';
+  updateTimer();
+}
+function toggleTimer(){
+  const elTS = document.getElementById('timer-start');
+  if(timerRunning){
+    clearInterval(timerInterval); timerRunning=false;
+    if(elTS) elTS.textContent='▶ スタート';
+  } else {
+    timerRunning=true;
+    if(elTS) elTS.textContent='⏸ 一時停止';
+    timerInterval=setInterval(()=>{
+      if(timerSec>0){ timerSec--; updateTimer(); }
+      else{
+        clearInterval(timerInterval); timerRunning=false;
+        timerSec=timerModes[timerMode].sec;
+        if(elTS) elTS.textContent='▶ スタート';
+        updateTimer();
+      }
+    },1000);
+  }
+  updateTimer();
+}
+function resetTimer(){
+  clearInterval(timerInterval); timerRunning=false;
+  timerSec=timerModes[timerMode].sec;
+  const elTS = document.getElementById('timer-start');
+  if(elTS) elTS.textContent='▶ スタート';
+  updateTimer();
+}
+
+function renderSidebarSubjects(){
+  const el = document.getElementById('sidebar-subjects');
+  if(!el) return;
+  el.innerHTML = subjects.map(s=>`
+    <div class="subject-chip">
+      <div class="subject-dot" style="background:${s.color}"></div>
+      <span style="flex:1">${s.name}</span>
+      <span style="font-size:11px;color:var(--text3);font-family:var(--font-mono)">${s.hours}h</span>
+    </div>`).join('');
+}
+function renderWeekChart(){
+  const el = document.getElementById('week-chart');
+  if(!el) return;
+  const max=Math.max(...weekData,.1);
+  const today=(new Date().getDay()+6)%7;
+  el.innerHTML=weekData.map((v,i)=>`
+    <div class="wc-col">
+      <div class="wc-val">${v>0?v+'h':''}</div>
+      <div class="wc-wrap"><div class="wc-bar" style="height:${v/max*100}%;background:${i===today?'#7c6fff':'#2e3555'};width:100%"></div></div>
+      <div class="wc-day">${weekDays[i]}</div>
+    </div>`).join('');
+}
+function renderSubjProgress(){
+  const el = document.getElementById('subj-progress');
+  if(!el) return;
+  el.innerHTML=subjects.map(s=>`
+    <div class="prog-item">
+      <div class="prog-header">
+        <span class="prog-name" style="color:${s.color}">${s.name}</span>
+        <span class="prog-val">${s.hours}h / ${s.target}h</span>
+      </div>
+      <div class="prog-track"><div class="prog-bar" style="width:${s.progress}%;background:${s.color}"></div></div>
+    </div>`).join('');
+}
+function renderStreak(){
+  const el = document.getElementById('streak-grid');
+  if(!el) return;
+  el.innerHTML=Array.from({length:14},(_,i)=>{
+    const t=i===13, d=i<11&&[0,1,2,3,4,6,7,8,9,10].includes(i);
+    return `<div class="s-dot${d?' done':''}${t?' today':''}"></div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════
+// ══ MINDMAP ENGINE (Tree Layout) ════════════════════
+// ═══════════════════════════════════════════════════
+let expandedSubjects = {}; 
+let mmZoom = 1.0;
+let editTarget = null;
+
+const NODE_WIDTH = 180;
+const NODE_HEIGHT = 60;
+const LEVEL_GAP = 220; // 階層間の距離
+const ITEM_GAP = 80;  // 同じ階層のノード間の距離
+
+function renderMindmap(){
+  const nodesEl = document.getElementById('mindmap-nodes');
+  const svgEl   = document.getElementById('mindmap-svg');
+  if(!nodesEl || !svgEl) return;
+
+  nodesEl.innerHTML = '';
+  svgEl.innerHTML   = '';
+
+  const startX = 150;
+  const startY = 500;
+
+  // Center node
+  const centerNode = makeNode('center', startX, startY, `
+    <div class="mm-center">
+      <div class="mm-center-title">${document.getElementById('f-exam')?.value||'学習マップ'}</div>
+      <div class="mm-center-sub">クリックで展開</div>
+    </div>
+  `);
+  nodesEl.appendChild(centerNode);
+
+  // Calculate positions
+  let currentY = startY - (calculateTotalHeight() / 2);
+  
+  subjects.forEach((sub, si) => {
+    const isExp = !!expandedSubjects[sub.id];
+    const subjData = mapData.find(m=>m.subjectId===sub.id)||{units:[]};
+    const subHeight = isExp ? Math.max(1, subjData.units.length) * ITEM_GAP : ITEM_GAP;
+    
+    const sX = startX + LEVEL_GAP;
+    const sY = currentY + (subHeight / 2);
+
+    // Line: center -> subject
+    drawTreeLine(svgEl, startX + 70, startY, sX - 65, sY, sub.color);
+
+    const sNode = makeNode('subject-'+sub.id, sX, sY, `
+      <div class="mm-subject ${isExp?'expanded':''}"
+           style="border-color:${sub.color};color:${sub.color}"
+           onclick="toggleSubject(${sub.id})">
+        <div class="mm-subject-name">${sub.name}</div>
+        <div class="mm-subject-stats">${sub.hours}h / ${sub.target}h</div>
+      </div>
+    `);
+    nodesEl.appendChild(sNode);
+
+    sNode.querySelector('.mm-subject').addEventListener('contextmenu', e=>{
+      e.preventDefault();
+      openEditPanel({type:'subject',subjectId:sub.id});
+    });
+
+    if(isExp){
+      subjData.units.forEach((unit, ui) => {
+        const uX = sX + LEVEL_GAP;
+        const uY = currentY + (ui * ITEM_GAP) + (ITEM_GAP / 2);
+
+        // Line: subject -> unit
+        drawTreeLine(svgEl, sX + 65, sY, uX - 75, uY, sub.color, true);
+
+        const uNode = makeNode('unit-'+unit.id, uX, uY, `
+          <div class="mm-unit ${unit.memo?'has-memo':''}"
+               style="border-color:${sub.color}40"
+               onclick="openEditPanel({type:'unit',subjectId:${sub.id},unitId:'${unit.id}'})">
+            <div class="mm-unit-name">${unit.name}</div>
+          </div>
+        `);
+        nodesEl.appendChild(uNode);
+      });
+    }
+
+    currentY += subHeight;
+  });
+
+  updateZoom();
+}
+
+function calculateTotalHeight(){
+  let total = 0;
+  subjects.forEach(sub => {
+    const isExp = !!expandedSubjects[sub.id];
+    const subjData = mapData.find(m=>m.subjectId===sub.id)||{units:[]};
+    total += isExp ? Math.max(1, subjData.units.length) * ITEM_GAP : ITEM_GAP;
+  });
+  return total;
+}
+
+function makeNode(id, x, y, html){
+  const div = document.createElement('div');
+  div.className = 'mm-node';
+  div.id = 'mmn-'+id;
+  div.style.left = x+'px';
+  div.style.top  = y+'px';
+  div.innerHTML  = html;
+  return div;
+}
+
+function drawTreeLine(svg, x1, y1, x2, y2, color, dashed=false){
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  // ベジェ曲線でなめらかにつなぐ
+  const cp1x = x1 + (x2 - x1) / 2;
+  const d = `M ${x1} ${y1} C ${cp1x} ${y1}, ${cp1x} ${y2}, ${x2} ${y2}`;
+  
+  path.setAttribute('d', d);
+  path.setAttribute('stroke', color);
+  path.setAttribute('stroke-width', '2');
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke-opacity', '0.4');
+  if(dashed) path.setAttribute('stroke-dasharray', '4,3');
+  svg.appendChild(path);
+}
+
+function toggleSubject(id){
+  expandedSubjects[id] = !expandedSubjects[id];
+  renderMindmap();
+}
+
+function autoFitMindmap(){
+  const nodes = document.querySelectorAll('.mm-node');
+  if(nodes.length === 0) return;
+
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  nodes.forEach(n => {
+    const x = parseFloat(n.style.left);
+    const y = parseFloat(n.style.top);
+    minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+    minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+  });
+
+  const canvas = document.getElementById('mindmap-canvas');
+  const cw = canvas.clientWidth - 100;
+  const ch = canvas.clientHeight - 100;
+  const mw = maxX - minX + 300;
+  const mh = maxY - minY + 200;
+
+  mmZoom = Math.min(1.2, Math.min(cw / mw, ch / mh));
+  if(mmZoom < 0.4) mmZoom = 0.4;
+  
+  updateZoom();
+  
+  // スクロール位置を中央に
+  canvas.scrollLeft = (minX * mmZoom) - 50;
+  canvas.scrollTop = (minY * mmZoom) - (ch / 2) + 50;
+}
+
+function updateZoom(){
+  const wrap = document.getElementById('mindmap-wrap');
+  if(wrap){
+    wrap.style.transform = `scale(${mmZoom})`;
+    wrap.style.transformOrigin = '0 0';
+  }
+  const elZL = document.getElementById('zoom-label');
+  if(elZL) elZL.textContent = Math.round(mmZoom*100)+'%';
+}
+
+function zoomMM(delta){
+  mmZoom = Math.min(2, Math.max(0.3, mmZoom+delta));
+  updateZoom();
+}
+
+function resetMindmap(){
+  if(!confirm('全てのマップデータをリセットしますか？')) return;
+  subjects = []; mapData = []; formSubjects = []; expandedSubjects = {};
+  renderSidebarSubjects(); renderMindmap();
+}
+
+function addSubjectPrompt(){
+  const name = prompt('科目名を入力してください:','新科目');
+  if(!name) return;
+  const newId = subjects.length ? Math.max(...subjects.map(s=>s.id))+1 : 0;
+  const col   = subjectColors[subjects.length % subjectColors.length];
+  subjects.push({id:newId, name, color:col, hours:0, target:20, progress:0});
+  mapData.push({subjectId:newId, units:[]});
+  formSubjects.push({name, level:50, color:col});
+  renderSidebarSubjects(); renderMindmap();
+}
+
+function openEditPanel(target){
+  editTarget = target;
+  const panel = document.getElementById('mm-edit-panel');
+  const addChild = document.getElementById('mm-edit-addchild');
+  panel.classList.add('visible');
+
+  if(target.type==='subject'){
+    const sub = subjects.find(s=>s.id===target.subjectId);
+    document.getElementById('mm-edit-panel-title').textContent = '科目を編集：'+sub.name;
+    document.getElementById('mm-edit-name').value = sub.name;
+    document.getElementById('mm-edit-memo').value = '';
+    addChild.style.display = 'block';
+  } else {
+    const subjData = mapData.find(m=>m.subjectId===target.subjectId);
+    const unit = subjData?.units.find(u=>u.id===target.unitId);
+    document.getElementById('mm-edit-panel-title').textContent = '単元を編集';
+    document.getElementById('mm-edit-name').value = unit?.name||'';
+    document.getElementById('mm-edit-memo').value = unit?.memo||'';
+    addChild.style.display = 'none';
+  }
+}
+
+function closeEditPanel(){
+  document.getElementById('mm-edit-panel').classList.remove('visible');
+  editTarget = null;
+}
+
+function saveEditPanel(){
+  if(!editTarget) return;
+  const newName = document.getElementById('mm-edit-name').value.trim();
+  const newMemo = document.getElementById('mm-edit-memo').value.trim();
+  if(!newName) return;
+
+  if(editTarget.type==='subject'){
+    const sub = subjects.find(s=>s.id===editTarget.subjectId);
+    if(sub) sub.name = newName;
+    renderSidebarSubjects();
+  } else {
+    const subjData = mapData.find(m=>m.subjectId===editTarget.subjectId);
+    const unit = subjData?.units.find(u=>u.id===editTarget.unitId);
+    if(unit){ unit.name=newName; unit.memo=newMemo; }
+  }
+  closeEditPanel(); renderMindmap();
+}
+
+function deleteFromPanel(){
+  if(!editTarget) return;
+  if(editTarget.type==='subject'){
+    if(!confirm('この科目を削除しますか？')) return;
+    const idx = subjects.findIndex(s=>s.id===editTarget.subjectId);
+    if(idx>=0) subjects.splice(idx,1);
+    const midx = mapData.findIndex(m=>m.subjectId===editTarget.subjectId);
+    if(midx>=0) mapData.splice(midx,1);
+    renderSidebarSubjects();
+  } else {
+    const subjData = mapData.find(m=>m.subjectId===editTarget.subjectId);
+    if(subjData){
+      const uidx = subjData.units.findIndex(u=>u.id===editTarget.unitId);
+      if(uidx>=0) subjData.units.splice(uidx,1);
+    }
+  }
+  closeEditPanel(); renderMindmap();
+}
+
+function addUnitFromPanel(){
+  if(!editTarget || editTarget.type!=='subject') return;
+  const name = document.getElementById('mm-add-unit-name').value.trim();
+  if(!name) return;
+  let subjData = mapData.find(m=>m.subjectId===editTarget.subjectId);
+  if(!subjData){ subjData={subjectId:editTarget.subjectId,units:[]}; mapData.push(subjData); }
+  const uid = 'u'+Date.now();
+  subjData.units.push({id:uid, name, memo:''});
+  document.getElementById('mm-add-unit-name').value='';
+  expandedSubjects[editTarget.subjectId]=true;
+  renderMindmap();
+}
+
+function openImportPanel(){ document.getElementById('mm-import-panel').classList.add('visible'); }
+function closeImportPanel(){ document.getElementById('mm-import-panel').classList.remove('visible'); }
+
+function importFromText(){
+  const text = document.getElementById('mm-import-text').value.trim();
+  if(!text) return;
+  if(!confirm('現在のデータを上書きしてインポートしますか？')) return;
+
+  subjects = []; mapData = []; formSubjects = []; expandedSubjects = {};
+  const lines = text.split('\n');
+  let currentSub = null;
+  let subIdCounter = 0;
+
+  lines.forEach(line => {
+    const trimmed = line.trim();
+    if(!trimmed) return;
+    if(trimmed.startsWith('-')){
+      if(currentSub){
+        const unitPart = trimmed.substring(1).trim();
+        const [uName, ...uMemoParts] = unitPart.split(':');
+        const uMemo = uMemoParts.join(':').trim();
+        const md = mapData.find(m=>m.subjectId===currentSub.id);
+        md.units.push({id:'u'+Date.now()+Math.random(), name:uName.trim(), memo:uMemo});
+      }
+    } else {
+      const sid = subIdCounter++;
+      const col = subjectColors[sid % subjectColors.length];
+      currentSub = {id:sid, name:trimmed, color:col, hours:0, target:20, progress:0};
+      subjects.push(currentSub);
+      mapData.push({subjectId:sid, units:[]});
+      formSubjects.push({name:trimmed, level:50, color:col});
+    }
+  });
+
+  renderSidebarSubjects(); renderMindmap(); autoFitMindmap(); closeImportPanel();
+}
+
+// ═══════════════════════════════════════════════════
+// ══ 月次スケジュール ═════════════════════════════
+// ═══════════════════════════════════════════════════
+function changeMonth(delta){
+  calMonth += delta;
+  if(calMonth>11){ calMonth=0; calYear++; }
+  if(calMonth<0) { calMonth=11; calYear--; }
+  buildMonthlySchedule();
+}
+
+function buildMonthlySchedule(){
+  calYear  = calYear  || new Date().getFullYear();
+  calMonth = calMonth !== undefined ? calMonth : new Date().getMonth();
+  const elMT = document.getElementById('month-title');
+  if(elMT) elMT.textContent = `${calYear}年 ${calMonth+1}月`;
+
+  monthEvents = {};
+  const restDays = [0, 6];
+  const allUnits = [];
+  mapData.forEach(md => {
+    const sub = subjects.find(s=>s.id===md.subjectId);
+    if(!sub) return;
+    md.units.forEach(u => allUnits.push({unit:u, sub}));
+  });
+
+  if(allUnits.length === 0){
+    subjects.forEach(s=>{ allUnits.push({unit:{id:'auto', name:s.name+'基礎', memo:''}, sub:s}); });
+  }
+
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  let unitCursor = 0;
+
+  for(let d=1; d<=daysInMonth; d++){
+    const date = new Date(calYear, calMonth, d);
+    const dow  = date.getDay();
+    const key  = `${calYear}-${pad(calMonth+1)}-${pad(d)}`;
+
+    if(restDays.includes(dow)){
+      monthEvents[key] = [{type:'rest'}];
+      continue;
+    }
+
+    const evs = [];
+    for(let slot=0; slot<2; slot++){
+      if(allUnits.length === 0) break;
+      const ui = allUnits[unitCursor % allUnits.length];
+      unitCursor++;
+      evs.push({
+        type: 'study',
+        subName:  ui.sub.name,
+        unitName: ui.unit.name,
+        color:    ui.sub.color,
+        session:  slot===0 ? '午前セッション' : '夜間セッション',
+        duration: slot===0 ? '90分' : '60分'
+      });
+    }
+    monthEvents[key] = evs;
+  }
+
+  renderCalendar();
+  renderMonthStats(daysInMonth, restDays);
+}
+
+function renderMonthStats(daysInMonth, restDays){
+  let studyDays=0, totalSessions=0;
+  for(let d=1; d<=daysInMonth; d++){
+    const dow = new Date(calYear,calMonth,d).getDay();
+    if(!restDays.includes(dow)){ studyDays++; totalSessions+=2; }
+  }
+  const elMS = document.getElementById('month-stats');
+  if(elMS) elMS.innerHTML = `
+    <div class="month-stat"><div class="month-stat-val">${studyDays}</div><div class="month-stat-label">学習予定日</div></div>
+    <div class="month-stat"><div class="month-stat-val">${totalSessions}</div><div class="month-stat-label">総セッション数</div></div>
+    <div class="month-stat"><div class="month-stat-val">${studyDays*2.5|0}h</div><div class="month-stat-label">推定学習時間</div></div>
+  `;
+}
+
+function renderCalendar(){
+  const grid = document.getElementById('cal-grid');
+  if(!grid) return;
+
+  const dayNames = ['日','月','火','水','木','金','土'];
+  const todayKey = `${new Date().getFullYear()}-${pad(new Date().getMonth()+1)}-${pad(new Date().getDate())}`;
+  let html = dayNames.map((d,i)=>`<div class="cal-header ${i===0?'sun':i===6?'sat':''}">${d}</div>`).join('');
+
+  const firstDow = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const prevDays = new Date(calYear, calMonth, 0).getDate();
+
+  for(let i=firstDow-1; i>=0; i--){
+    html += `<div class="cal-cell other-month"><div class="cal-date">${prevDays-i}</div></div>`;
+  }
+
+  for(let d=1; d<=daysInMonth; d++){
+    const date = new Date(calYear, calMonth, d);
+    const dow  = date.getDay();
+    const key  = `${calYear}-${pad(calMonth+1)}-${pad(d)}`;
+    const isToday = key === todayKey;
+    const evs  = monthEvents[key]||[];
+    const isRest = evs.length===1 && evs[0].type==='rest';
+
+    let cls = 'cal-cell';
+    if(isToday) cls += ' today';
+    if(isRest)  cls += ' rest-day';
+
+    const dateNumCls = dow===0?'cal-date sun-num':dow===6?'cal-date sat-num':'cal-date';
+    const dateNumInner = isToday
+      ? `<div class="${dateNumCls}" style="background:var(--accent);color:#fff;border-radius:50%">${d}</div>`
+      : `<div class="${dateNumCls}">${d}</div>`;
+
+    let evHtml = '';
+    if(isRest){
+      evHtml = `<div class="cal-rest-label"><i class="ti ti-coffee" style="font-size:11px"></i>休息日</div>`;
+    } else {
+      evHtml = evs.map(ev=>`
+        <div class="cal-event" style="background:${ev.color}25;color:${ev.color};border-left:2px solid ${ev.color}">${ev.subName}</div>
+      `).join('');
+    }
+    html += `<div class="${cls}">${dateNumInner}${evHtml}</div>`;
+  }
+
+  const totalCells = firstDow + daysInMonth;
+  const trailingCells = (7 - totalCells%7) % 7;
+  for(let i=1; i<=trailingCells; i++){
+    html += `<div class="cal-cell other-month"><div class="cal-date">${i}</div></div>`;
+  }
+  grid.innerHTML = html;
+}
+
+function renderFormSubjects(){
+  const c = document.getElementById('f-subjects');
+  if(!c) return;
+  c.innerHTML = formSubjects.map((s,i)=>`
+    <div class="subj-row">
+      <input type="text" value="${s.name}" oninput="formSubjects[${i}].name=this.value" placeholder="科目名">
+      <div class="range-wrap">
+        <span style="font-size:11px;color:var(--text3);width:36px;display:inline-block">理解度</span>
+        <input type="range" min="0" max="100" value="${s.level}" oninput="this.nextElementSibling.textContent=this.value+'%';formSubjects[${i}].level=parseInt(this.value)">
+        <span style="font-size:11px;font-family:var(--font-mono);width:32px">${s.level}%</span>
+      </div>
+      <button class="btn small" onclick="removeFormSubject(${i})" style="padding:4px 8px;border-color:transparent;background:transparent;color:var(--text3)"><i class="ti ti-trash"></i></button>
+    </div>`).join('');
+}
+function addFormSubject(){
+  formSubjects.push({name:'新科目', level:50, color:subjectColors[formSubjects.length%subjectColors.length]});
+  renderFormSubjects();
+}
+function removeFormSubject(i){ formSubjects.splice(i,1); renderFormSubjects(); }
+function toggleChip(el){ el.classList.toggle('on'); }
+function setTab(tab,btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+function generateSchedule(){
+  const btn=document.getElementById('gen-btn');
+  if(formSubjects.length===0){
+    const elGE = document.getElementById('gen-err');
+    if(elGE) elGE.innerHTML=`<div class="err-box">科目を1つ以上設定してください。</div>`;
+    return;
+  }
+  const elGE = document.getElementById('gen-err');
+  if(elGE) elGE.innerHTML='';
+  btn.disabled=true;
+  const elRE = document.getElementById('result-empty');
+  if(elRE) elRE.style.display='none';
+  const elAE = document.getElementById('adv-empty');
+  if(elAE) elAE.style.display='none';
+  const rc=document.getElementById('result-content');
+  rc.style.display='block';
+  rc.innerHTML=`<div class="thinking"><div class="dot-ani"><span></span><span></span><span></span></div><div>AIが最適なプランを作成中...</div></div>`;
+
+  setTimeout(()=>{
+    const examName=document.getElementById('f-exam').value||'指定試験';
+    const dailyH=parseInt(document.getElementById('f-daily').value);
+    const style=document.getElementById('f-style').value;
+    const period=parseInt(document.getElementById('f-period').value);
+    const restDays=Array.from(document.querySelectorAll('#f-rest .chip.on')).map(c=>c.textContent);
+
+    rc.innerHTML = `
+      <div class="summary-bar"><strong>${examName}</strong> に向けた ${period}日間の学習プラン</div>
+      ${formSubjects.map(s=>`
+        <div class="day-block"><div class="day-label" style="color:${s.color}">${s.name}</div>
+        <div class="day-inner"><div class="sched-slot"><div class="sched-time">09:00</div><div class="sched-bar" style="background:${s.color}"></div>
+        <div class="sched-body"><div class="sched-title">${s.name}基礎</div><span class="sched-tag">90分</span></div></div></div></div>
+      `).join('')}
+    `;
+    const ac=document.getElementById('adv-content');
+    ac.style.display='block';
+    ac.innerHTML=`<div class="tips-item"><div class="tip-num">1</div><div><div class="tip-title">アドバイス</div><div class="tip-body">朝の時間を活用しましょう。</div></div></div>`;
+    btn.disabled=false;
+  }, 1500);
+}
+
+updateTimer();
+</script>
+</body>
+</html>
